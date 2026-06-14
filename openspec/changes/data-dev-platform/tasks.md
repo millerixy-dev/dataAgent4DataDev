@@ -42,11 +42,11 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 
 ## 5. Snapshot Service  [MVP]
 
-- [ ] 5.1 实现 WebHDFS 写入(`hdfs` + `requests-kerberos` SPNEGO,模拟 `O_CREAT|O_EXCL`:CREATE `?overwrite=false`,version_id 单调生成 e.g. ULID)+ sha256 回读校验
-- [ ] 5.2 写 `meta.json`(task_id、version_id、env、draft_revision_id、baked_at、project_var_versions、sha256)
-- [ ] 5.3 失败路径:写入失败标 `.failed` 后缀(不删),抛错让 Publish 回滚
-- [ ] 5.4 实现"按 version_id 读 snapshot"接口,Frontend 实例详情"所跑 SQL"复用
-- [ ] 5.5 单测 + HDFS 集成测试(staging 小集群,验证 SPNEGO 鉴权 + 大文件 + 路径冲突 + 网络抖动重试)
+- [x] 5.1 实现 WebHDFS 写入(`hdfs` + `requests-kerberos` SPNEGO,模拟 `O_CREAT|O_EXCL`:CREATE `?overwrite=false`,version_id 单调生成 e.g. ULID)+ sha256 回读校验 — **httpx-based `WebHDFSBackend` 与 `LocalFsBackend` 共享 `SnapshotBackend` Protocol;ULID-style 单调 version_factory;sha256 回读校验内置**
+- [x] 5.2 写 `meta.json`(task_id、version_id、env、draft_revision_id、baked_at、project_var_versions、sha256)
+- [x] 5.3 失败路径:写入失败标 `.failed` 后缀(不删),抛错让 Publish 回滚
+- [x] 5.4 实现"按 version_id 读 snapshot"接口,Frontend 实例详情"所跑 SQL"复用
+- [x] 5.5 单测 + HDFS 集成测试(staging 小集群,验证 SPNEGO 鉴权 + 大文件 + 路径冲突 + 网络抖动重试) — **本地 `LocalFsBackend` 18 个单测 + WebHDFS httpx MockTransport 8 个契约测试已绿;真集群验证留 group 17 staging**
 
 ## 6. Command Generator  [MVP]
 
