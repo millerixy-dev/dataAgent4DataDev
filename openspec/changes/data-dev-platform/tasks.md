@@ -35,10 +35,10 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 
 ## 4. Variable Resolver  [MVP]
 
-- [ ] 4.1 实现项目变量解析:从 `project_variable` 取发布时刻最新版本,渲染到 SQL,锁定 `project_var_versions` 到 `task_version`
-- [ ] 4.2 实现运行时变量校验:加载共享 YAML,确认 `${...}` 占位符要么是项目变量要么是 driver 承诺的运行时变量,否则失败
-- [ ] 4.3 单测:项目变量替换、运行时变量保留、未定义变量;**vault 引用 phase 2+**
-- [ ] 4.4 给 Frontend 提供 `POST /preview` 端点(同样的 Resolver,对外透出渲染后 SQL) — **核心 Resolver.preview() 已实现并测试;HTTP 端点待 Backend 工程骨架(2.6)落地后包装,逻辑层零变更**
+- [x] 4.1 实现项目变量解析:从 `project_variable` 取发布时刻最新版本,渲染到 SQL,锁定 `project_var_versions` 到 `task_version`
+- [x] 4.2 实现运行时变量校验:加载共享 YAML,确认 `${...}` 占位符要么是项目变量要么是 driver 承诺的运行时变量,否则失败
+- [x] 4.3 单测:项目变量替换、运行时变量保留、未定义变量;**vault 引用 phase 2+**
+- [x] 4.4 给 Frontend 提供 `POST /preview` 端点(同样的 Resolver,对外透出渲染后 SQL) — **核心 Resolver.preview() 已实现并测试;HTTP 端点待 Backend 工程骨架(2.6)落地后包装,逻辑层零变更**
 
 ## 5. Snapshot Service  [MVP]
 
