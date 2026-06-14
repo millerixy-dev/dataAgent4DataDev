@@ -1,0 +1,178 @@
+name: architecture-driven
+version: 1
+description: >-
+  Architecture-driven workflow with explicit architecture, data-flow, and
+  runtime-control-flow artifacts before detailed design and implementation tasks.
+
+artifacts:
+  - id: proposal
+    generates: proposal.md
+    description: Initial proposal describing why the change is needed and its capability scope
+    template: proposal.md
+    instruction: |
+      Create proposal.md to establish WHY the change is needed and WHAT capability
+      boundaries are affected.
+
+      Required sections:
+      - Why: problem or opportunity, urgency, and expected value.
+      - What Changes: concrete additions, modifications, and removals. Mark breaking
+        changes with **BREAKING**.
+      - Capabilities: list new and modified capabilities using kebab-case names.
+      - Impact: affected users, code, APIs, data, dependencies, operations, migration,
+        and rollback considerations.
+
+      Keep implementation details out of this artifact. Architecture and technical
+      choices belong in later artifacts.
+    requires: []
+
+  - id: specs
+    generates: "specs/**/*.md"
+    description: Delta specifications defining externally observable behavior
+    template: spec.md
+    instruction: |
+      Create one delta spec file for each capability listed in proposal.md.
+
+      Paths:
+      - New capability: specs/<capability>/spec.md
+      - Modified capability: specs/<existing-capability>/spec.md
+
+      Use only these delta section headings when applicable:
+      - ## ADDED Requirements
+      - ## MODIFIED Requirements
+      - ## REMOVED Requirements
+      - ## RENAMED Requirements
+
+      Every requirement must use the exact heading format:
+      ### Requirement: <name>
+
+      Every requirement must contain at least one scenario with exactly four hashes:
+      #### Scenario: <name>
+
+      Scenarios must use WHEN/THEN bullets. Requirements describe WHAT is observable,
+      not HOW it is implemented. For MODIFIED requirements, copy the complete existing
+      requirement block and edit the full block; partial modifications lose content
+      during archive.
+    requires:
+      - proposal
+
+  - id: architecture
+    generates: architecture.md
+    description: System boundaries, component responsibilities, integrations, and deployment topology
+    template: architecture.md
+    instruction: |
+      Create architecture.md after reading proposal.md, all delta specs, existing code,
+      existing OpenSpec specs, and relevant deployment/configuration files.
+
+      The artifact must establish the structural design baseline before detailed data
+      and runtime flows are produced. Include:
+      - current-state constraints and change boundary;
+      - Mermaid system-context diagram;
+      - Mermaid component/container diagram;
+      - deployment diagram when processes, nodes, clusters, networks, or trust zones matter;
+      - component responsibility and interface tables;
+      - external dependencies, ownership, trust boundaries, and compatibility impacts;
+      - mapping from capabilities/requirements to components.
+
+      Do not invent components merely to make the diagram look complete. Clearly mark
+      assumptions and unresolved decisions.
+    requires:
+      - specs
+
+  - id: data-flow
+    generates: data-flow.md
+    description: End-to-end data movement, transformations, contracts, storage, quality, and lineage
+    template: data-flow.md
+    instruction: |
+      Create data-flow.md using proposal.md, specs, and architecture.md.
+
+      Describe how data enters, moves through, changes within, and leaves the system.
+      Include Mermaid diagrams for the relevant levels of detail and document:
+      - producers, consumers, stores, caches, queues, files, and external systems;
+      - schemas/contracts, identifiers, partitions, ordering, and versioning;
+      - transformations, validation, deduplication, idempotency, and quality checks;
+      - sensitive-data boundaries, encryption, retention, deletion, and audit needs;
+      - failure destinations, replay/recovery behavior, and lineage;
+      - volume, latency, freshness, and consistency expectations.
+
+      If the change has no meaningful data movement, state why and include only the
+      minimal applicable sections rather than fabricating a flow.
+    requires:
+      - architecture
+
+  - id: runtime-flow
+    generates: runtime-flow.md
+    description: Runtime orchestration, control branches, sequence interactions, states, and failure handling
+    template: runtime-flow.md
+    instruction: |
+      Create runtime-flow.md using proposal.md, specs, architecture.md, and data-flow.md.
+
+      Explain runtime CONTROL rather than repeating static architecture. Include:
+      - entry points, actors, triggers, and preconditions;
+      - Mermaid sequence diagram for the principal cross-component interaction;
+      - Mermaid flowchart for branching and decision logic;
+      - Mermaid stateDiagram-v2 when an entity or job has meaningful lifecycle states;
+      - success, validation failure, dependency failure, timeout, retry, cancellation,
+        compensation, rollback, and manual intervention paths;
+      - concurrency, idempotency, retry budgets, circuit breaking, and backpressure;
+      - mapping from branches and terminal states to specification scenarios.
+
+      Omit diagram types that genuinely do not apply, but explicitly state the reason.
+    requires:
+      - data-flow
+
+  - id: design
+    generates: design.md
+    description: Consolidated technical decisions and implementation approach
+    template: design.md
+    instruction: |
+      Create design.md as the decision-oriented synthesis of proposal.md, specs,
+      architecture.md, data-flow.md, and runtime-flow.md.
+
+      Do not duplicate every diagram. Reference the dedicated artifacts and focus on:
+      - context, constraints, goals, and non-goals;
+      - key technical decisions with alternatives and consequences;
+      - public/internal interfaces and compatibility strategy;
+      - data model and consistency/transaction semantics;
+      - security, performance/capacity, reliability, and observability;
+      - test strategy and acceptance evidence;
+      - rollout, migration, rollback, and operational readiness;
+      - risks, trade-offs, assumptions, and open questions.
+
+      Resolve contradictions among prior artifacts or call them out explicitly before
+      generating tasks.
+    requires:
+      - architecture
+      - data-flow
+      - runtime-flow
+
+  - id: tasks
+    generates: tasks.md
+    description: Dependency-ordered implementation and verification checklist
+    template: tasks.md
+    instruction: |
+      Create tasks.md from the complete artifact set.
+
+      Mandatory format:
+      - Group work under numbered ## headings.
+      - Every trackable task must be a checkbox: - [ ] X.Y <description>
+      - Tasks must be dependency ordered, independently verifiable, and small enough
+        for one focused implementation session.
+      - Reference requirement names or design sections where useful.
+
+      Include work for implementation, tests, data migration, security, observability,
+      deployment, rollback validation, documentation, and updating architecture/data/
+      runtime-flow artifacts when the as-built implementation differs.
+    requires:
+      - specs
+      - design
+
+apply:
+  requires:
+    - tasks
+  tracks: tasks.md
+  instruction: |
+    Read every artifact before implementation. Work through unchecked tasks in dependency
+    order and mark each completed checkbox. Validate against specification scenarios.
+    If implementation reveals an incorrect assumption or requires architectural drift,
+    update architecture.md, data-flow.md, runtime-flow.md, design.md, and tasks.md before
+    continuing. Do not silently diverge from the approved design baseline.
