@@ -2,6 +2,8 @@
 name = "pyspark-driver"
 version = "0.2.0"
 description = "Spark SQL driver for data-dev-platform; runs as a stand-alone script under YARN cluster mode."
+readme = "README.md"
+license = { file = "LICENSE" }
 requires-python = ">=3.10"
 dependencies = [
   "pyyaml>=6.0",

@@ -108,4 +108,4 @@ When you change behaviour:
 
 ## License
 
-TBD.
+[MIT](./LICENSE).
