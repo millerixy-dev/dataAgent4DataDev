@@ -8,7 +8,7 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 
 ## 1. Design Readiness  [MVP]
 
-- [ ] 1.1 design.md "Open questions" 已确认并落到 Decision 5 / Decision 7 / Decision 11 与"Resolved Decisions"表:Python 3.10+ + FastAPI、MySQL 8、Vue 3 + `vue-element-plus-admin`、OpenTelemetry、MVP 不引入 MQ、Snapshot 存 HDFS(WebHDFS)
+- [x] 1.1 design.md "Open questions" 已确认并落到 Decision 5 / Decision 7 / Decision 11 与"Resolved Decisions"表:Python 3.10+ + FastAPI、MySQL 8、Vue 3 + `vue-element-plus-admin`、OpenTelemetry、MVP 不引入 MQ、Snapshot 存 HDFS(WebHDFS)
 - [ ] 1.2 整理 specs ↔ architecture ↔ data-flow ↔ runtime-flow 的映射,确认无矛盾;若需调整,同步更新 artifact
 - [ ] 1.3 与安全/合规/运维过 design.md 的 Security、Rollout、Migration、Rollback 章节,签字确认验收门槛
 - [ ] 1.4 评审 conf 白/黑名单具体清单(Decision 9 全集),产出"白名单管理流程"文档;**MVP 表单仅暴露结构化字段,高级 conf 文本框 phase 2+,但白名单逻辑骨架 MVP 即在**
@@ -27,11 +27,11 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 ## 3. Driver 改造(独立、可先行)  [MVP]
 
 - [x] 3.1 把"运行时变量目录"YAML 引入 driver,实现 `${dt}/${date}/${month}/${dt-N}/${date-N}/${hr}` 渲染(specs/runtime-variable-rendering)。`${dt-N}/${date-N}` 用独立 pattern 优先匹配(连字符不在普通变量名字符集);`${hr}` 缺 `--biz-hour` 时 fail-fast
-- [ ] 3.2 driver 新增 CLI:`--biz-hour`(可选,两位 HH 00-23)、`--timezone`、`--trace-id`、`--version-id`、`--instance-id`,缺省可工作(向后兼容)
-- [ ] 3.3 driver 加结构化日志(`application_id`、`trace_id`、`biz_date`、`biz_hour`、`version_id`、SQL 序号、SQL 哈希)
+- [x] 3.2 driver 新增 CLI:`--biz-hour`(可选,两位 HH 00-23)、`--timezone`、`--trace-id`、`--version-id`、`--instance-id`,缺省可工作(向后兼容)
+- [x] 3.3 driver 加结构化日志(`application_id`、`trace_id`、`biz_date`、`biz_hour`、`version_id`、SQL 序号、SQL 哈希)
 - [x] 3.4 默认严格模式:未定义变量 fail-fast,错误信息列出全部未定义变量
-- [ ] 3.5 driver 单测:基础变量、`${dt-N}/${date-N}` 偏移含 N=0/1/365、`${hr}` 含/缺 `--biz-hour`、时区一致性、未定义变量、向后兼容(老命令)、`${dt-1abc}` 等非法形式视为未定义
-- [ ] 3.6 driver 历史 snapshot 回归用例(用一份历史 SQL fixture 跑通,验证 driver 升级不破坏老物料)
+- [x] 3.5 driver 单测:基础变量、`${dt-N}/${date-N}` 偏移含 N=0/1/365、`${hr}` 含/缺 `--biz-hour`、时区一致性、未定义变量、向后兼容(老命令)、`${dt-1abc}` 等非法形式视为未定义
+- [x] 3.6 driver 历史 snapshot 回归用例(用一份历史 SQL fixture 跑通,验证 driver 升级不破坏老物料)
 
 ## 4. Variable Resolver  [MVP]
 
