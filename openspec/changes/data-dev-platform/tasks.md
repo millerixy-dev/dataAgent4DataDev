@@ -77,10 +77,10 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 
 ## 9. spark_submit.sh 改造  [MVP]
 
-- [ ] 9.1 重写 shell:`set -euo pipefail`、kinit、`set +x` 包裹敏感操作、`eval "$SPARK_CMD"`、`tee` 日志、抓 application_id、回调平台
-- [ ] 9.2 退出码透传 DS;application_id 抓取失败不阻断
-- [ ] 9.3 加 trace_id 打印到日志头部
-- [ ] 9.4 集成测试:shell 在真实 Worker 节点跑通(含 keytab 0400 + Kerberos) — **本地 mock(kinit/spark-submit/curl)集成已 11 case 全绿;真实 Worker 集群验证留给 staging e2e(group 17)**
+- [x] 9.1 重写 shell:`set -euo pipefail`、kinit、`set +x` 包裹敏感操作、`eval "$SPARK_CMD"`、`tee` 日志、抓 application_id、回调平台
+- [x] 9.2 退出码透传 DS;application_id 抓取失败不阻断
+- [x] 9.3 加 trace_id 打印到日志头部
+- [x] 9.4 集成测试:shell 在真实 Worker 节点跑通(含 keytab 0400 + Kerberos) — **本地 mock(kinit/spark-submit/curl)集成已 11 case 全绿;真实 Worker 集群验证留给 staging e2e(group 17)**
 
 ## 10. Instance Service(状态机)  [mixed]
 
