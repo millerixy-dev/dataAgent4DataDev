@@ -1,0 +1,123 @@
+# Runtime Variable Catalog
+#
+# 跨端共享 fixture - driver 渲染、Backend Variable Resolver 校验、Frontend 变量面板三方读同一份。
+# 作为 OpenSpec change `data-dev-platform` 的契约 (specs/runtime-variable-rendering, specs/pyspark-driver)。
+#
+# 字段语义:
+#   name           变量名(不含 ${})
+#   kind           runtime | project (本文件只列 runtime)
+#   syntax         literal | parameterized
+#   pattern        Python 兼容正则 (PCRE 子集),完整匹配整个 ${...} 占位符
+#                  driver/Resolver 用之识别变量;Frontend 高亮也用之
+#   requires       渲染所需 driver CLI 参数(缺则 fail-fast)
+#   derive         派生函数名(driver/Resolver 端的白名单函数),literal 变量留空
+#   examples       Frontend 预览展示与 driver/Resolver 双跑测试 fixture
+#                  - input:  渲染所需输入(对应 requires + parameterized 的捕获组)
+#                  - output: 渲染结果
+#   description    变量含义,展示在 Frontend 变量面板
+
+version: 1
+timezone_default: Asia/Shanghai
+
+variables:
+  - name: dt
+    kind: runtime
+    syntax: literal
+    pattern: '^\$\{dt\}$'
+    requires: [biz_date]
+    derive: identity_yyyymmdd
+    examples:
+      - input: { biz_date: "20260613" }
+        output: "20260613"
+    description: 业务日期 yyyyMMdd
+
+  - name: date
+    kind: runtime
+    syntax: literal
+    pattern: '^\$\{date\}$'
+    requires: [biz_date]
+    derive: identity_yyyy_mm_dd
+    examples:
+      - input: { biz_date: "20260613" }
+        output: "2026-06-13"
+    description: 业务日期 yyyy-MM-dd
+
+  - name: month
+    kind: runtime
+    syntax: literal
+    pattern: '^\$\{month\}$'
+    requires: [biz_date]
+    derive: identity_yyyymm
+    examples:
+      - input: { biz_date: "20260613" }
+        output: "202606"
+    description: 业务月份 yyyyMM
+
+  - name: dt-N
+    kind: runtime
+    syntax: parameterized
+    pattern: '^\$\{dt-(?P<n>[1-9][0-9]*|0)\}$'
+    requires: [biz_date]
+    derive: dt_minus_n
+    examples:
+      - input: { biz_date: "20260613", n: "0" }
+        output: "20260613"
+      - input: { biz_date: "20260613", n: "1" }
+        output: "20260612"
+      - input: { biz_date: "20260613", n: "7" }
+        output: "20260606"
+      - input: { biz_date: "20260601", n: "1" }
+        output: "20260531"
+      - input: { biz_date: "20260101", n: "1" }
+        output: "20251231"
+      - input: { biz_date: "20260301", n: "1" }
+        output: "20260228"
+    description: 业务日期 - N 日, yyyyMMdd (N 为 0 或正整数, 无前导零)
+
+  - name: date-N
+    kind: runtime
+    syntax: parameterized
+    pattern: '^\$\{date-(?P<n>[1-9][0-9]*|0)\}$'
+    requires: [biz_date]
+    derive: date_minus_n
+    examples:
+      - input: { biz_date: "20260613", n: "0" }
+        output: "2026-06-13"
+      - input: { biz_date: "20260613", n: "1" }
+        output: "2026-06-12"
+      - input: { biz_date: "20260613", n: "30" }
+        output: "2026-05-14"
+      - input: { biz_date: "20260101", n: "1" }
+        output: "2025-12-31"
+    description: 业务日期 - N 日, yyyy-MM-dd (N 为 0 或正整数, 无前导零)
+
+  - name: hr
+    kind: runtime
+    syntax: literal
+    pattern: '^\$\{hr\}$'
+    requires: [biz_hour]
+    derive: identity_hh
+    examples:
+      - input: { biz_hour: "00" }
+        output: "00"
+      - input: { biz_hour: "03" }
+        output: "03"
+      - input: { biz_hour: "23" }
+        output: "23"
+    description: 业务小时 HH (00-23, 两位)
+
+# 变量识别用的总扫描正则(Frontend 高亮 + driver/Resolver 第一阶段扫描)
+# 注:占位符必须以 ${ 开头、} 结尾,内部允许字母数字下划线点连字符
+scan_pattern: '\$\{[A-Za-z_][A-Za-z0-9_.\-]*\}'
+
+# Driver 严格模式行为:
+#   1. 用 scan_pattern 扫出所有占位符
+#   2. 对每个占位符,依次试 variables[*].pattern 完整匹配
+#   3. 命中则用 derive 函数渲染;不命中视为未定义变量
+#   4. requires 中的字段缺失 → fail-fast,错误信息列出该字段
+#   5. parameterized 变量的捕获组(如 dt-N 的 n)传给 derive 函数
+
+# Frontend 变量面板展示规则:
+#   - 按 kind 分组(runtime / project)
+#   - parameterized 变量名展示为 ${dt-N}, hover 显示 N 的合法范围
+#   - 用 examples[0] 作为默认展示示例
