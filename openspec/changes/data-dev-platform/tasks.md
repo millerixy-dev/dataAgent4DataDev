@@ -50,12 +50,12 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 
 ## 6. Command Generator  [MVP]
 
-- [ ] 6.1 把任务结构化配置 + snapshot 路径 + principal + queue 编译成 spark-submit 命令模板,`--biz-date` 留占位;**MVP 单租户固定 principal,字段在但不路由**
-- [ ] 6.2 实现 conf 白/黑名单逻辑,黑名单优先;命中黑名单直接拒绝
-- [ ] 6.3 实现 shell 严格转义(单引号包裹 + 内嵌单引号转义)
-- [ ] 6.4 命令生成后用 shlex 二次解析,确认 token 数量与设计一致(自检)
-- [ ] 6.5 单测覆盖:正常 conf、白名单边界、黑名单各 key、含 shell 元字符的值、超长 conf、空值、unicode
-- [ ] 6.6 安全 fuzz 测试(随机生成 conf key/value 边界 case,确认转义不破裂)
+- [x] 6.1 把任务结构化配置 + snapshot 路径 + principal + queue 编译成 spark-submit 命令模板,`--biz-date` 留占位;**MVP 单租户固定 principal,字段在但不路由**
+- [x] 6.2 实现 conf 白/黑名单逻辑,黑名单优先;命中黑名单直接拒绝
+- [x] 6.3 实现 shell 严格转义(单引号包裹 + 内嵌单引号转义)
+- [x] 6.4 命令生成后用 shlex 二次解析,确认 token 数量与设计一致(自检)
+- [x] 6.5 单测覆盖:正常 conf、白名单边界、黑名单各 key、含 shell 元字符的值、超长 conf、空值、unicode
+- [x] 6.6 安全 fuzz 测试(随机生成 conf key/value 边界 case,确认转义不破裂)
 
 ## 7. Publish Orchestrator(事务编排)  [mixed]
 
@@ -137,7 +137,7 @@ MVP 验收 e2e 9 步定义见 design.md `## MVP Scope`。
 
 ## 15. Security Hardening  [mixed]
 
-- [ ] 15.1 命令生成 fuzz 测试报告(产出文档,纳入 CI 周跑)  [MVP] — **`tests/test_command_generator_fuzz.py` 已纳入默认 pytest run,200+100 例 hypothesis 覆盖;CI 周跑挂钩待 group 17 部署 staging 时配置**
+- [x] 15.1 命令生成 fuzz 测试报告(产出文档,纳入 CI 周跑)  [MVP] — **`tests/test_command_generator_fuzz.py` 已纳入默认 pytest run,200+100 例 hypothesis 覆盖;CI 周跑挂钩待 group 17 部署 staging 时配置**
 - [ ] 15.2 keytab 文件权限 0400 + 文件系统加密 + DS shell `set +x` 包裹的人工核验  [MVP]
 - [ ] 15.3 Backend 自身 Kerberos ticket 自动续期(后台 worker)+ 监控告警;Python `requests-kerberos`/`gssapi` 在 CI 中的集成回归  [MVP]
 - [ ] 15.4 SQL 内容脱敏策略评审  [phase 2+]
