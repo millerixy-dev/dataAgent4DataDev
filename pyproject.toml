@@ -1,0 +1,24 @@
+[project]
+name = "pyspark-driver"
+version = "0.2.0"
+description = "Spark SQL driver for data-dev-platform; runs as a stand-alone script under YARN cluster mode."
+requires-python = ">=3.10"
+dependencies = [
+  "pyyaml>=6.0",
+]
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+  "ruff>=0.6",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"
+pythonpath = ["."]
