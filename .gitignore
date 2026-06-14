@@ -1,0 +1,48 @@
+# --- Python ----------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+*.egg
+.eggs/
+build/
+dist/
+.python-version
+
+# --- Virtualenvs / package managers ---------------------------------------
+.venv/
+venv/
+env/
+.envrc
+
+# --- Test / lint caches ---------------------------------------------------
+.pytest_cache/
+.ruff_cache/
+.hypothesis/
+.coverage
+htmlcov/
+.coverage.*
+coverage.xml
+
+# --- IDE / editors --------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# --- Tooling state local to this checkout ---------------------------------
+# Claude Code session state — must never be committed.
+.claude/
+
+# Stray archives from earlier OpenSpec schema experiments.
+openspec-architecture-driven/
+openspec-architecture-driven.zip
+
+# --- Secrets / runtime artefacts ------------------------------------------
+*.keytab
+*.pem
+*.key
+.env
+.env.*
+!.env.example
