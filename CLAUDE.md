@@ -6,11 +6,11 @@ shape of *this* project, not generic advice.
 ## What this is
 
 Data-development platform on top of CDP 7.1 + DolphinScheduler 3.1.7 +
-Spark 2.4.7. We are mid-build: groups 1–4 of the OpenSpec MVP are landed
-(driver renderer, spark_submit shim, Variable Resolver, Command Generator);
-groups 5–13 (Snapshot Service, Publish, DS Adapter, Instance Service, Frontend,
-…) are not. Read `openspec/changes/data-dev-platform/tasks.md` for the live
-checklist before assuming any module exists.
+Spark 2.4.7. We are mid-build: groups 1–5 of the OpenSpec MVP are landed
+(driver renderer, spark_submit shim, Variable Resolver, Command Generator,
+Snapshot Service); groups 6–13 (Publish, DS Adapter, Instance Service,
+Frontend, …) are not. Read `openspec/changes/data-dev-platform/tasks.md`
+for the live checklist before assuming any module exists.
 
 ## Hard rules
 
@@ -33,6 +33,10 @@ checklist before assuming any module exists.
    `resolver`, `command-generator`, `openspec`, `uv`. Reuse them.
 6. **Don't commit secrets, virtualenvs, caches, or `.claude/`.**
    `.gitignore` already covers them; if you add tooling state, extend it.
+7. **Compose tests must SKIP, not FAIL, when the stack is down.** Tag them
+   `@pytest.mark.compose` and probe the daemon with `docker inspect` (TCP
+   probes lie on macOS / Docker Desktop). `uv run pytest` with no docker
+   running is the canonical green-state baseline.
 
 ## Architectural invariants — never violate
 
@@ -97,9 +101,32 @@ tests/                              pytest. 100 cases.
                                      "vertical slice" landing.
 ```
 
-## Adding a new capability slice
+## Local docker stack (A-line)
 
-The repeated pattern, demonstrated in commits `bed9d82..c437935`:
+`compose/` ships a minimal stack — Hive Metastore + Postgres + (opt-in)
+DolphinScheduler standalone. **No HDFS, no YARN, no Kerberos.** Use it
+when you need a real HMS to validate publish-time wiring (Snapshot
+Service, future Publish Orchestrator, future DS Adapter).
+
+```bash
+make up           # HMS + Postgres
+make up-ds        # plus DolphinScheduler
+make ps           # status
+make test-compose # pytest -m compose against the running stack
+make down         # stop (keeps volumes)
+make clean        # drop volumes too
+```
+
+When the stack is down, the six `@pytest.mark.compose` tests SKIP, so
+`uv run pytest` is always green. Default ports are intentionally
+non-standard (15433, 19083, 10012) so this stack coexists with another
+CDP-flavoured docker stack on the same machine.
+
+The Kerberos-on-YARN B-line stack does NOT exist yet. If a task in
+`tasks.md` requires real WebHDFS / SPNEGO / yarn-cluster mode, surface
+that the A-line cannot satisfy it rather than half-building B-line.
+
+## Adding a new capability sliceThe repeated pattern, demonstrated in commits `bed9d82..c437935`:
 
 1. Read `openspec/changes/data-dev-platform/specs/<capability>/spec.md`. If
    it doesn't capture what you're about to do, update it first.

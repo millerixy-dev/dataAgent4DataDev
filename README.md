@@ -8,10 +8,12 @@ spark-submit command server-side (whitelist + shell-quote escaping), and uses DS
 purely as a timer + dependency graph. A thin `pyspark_driver.py` runs inside the
 YARN cluster Driver container.
 
-Status: **MVP groups 1–4 implemented and end-to-end tested locally**. Snapshot
-Service, Publish Orchestrator, DS Adapter, Instance Service, Frontend remain to
-be built; see `openspec/changes/data-dev-platform/tasks.md` for the live progress
-checklist.
+Status: **MVP groups 1–5 implemented and end-to-end tested locally** (driver,
+shell shim, Resolver, Command Generator, Snapshot Service). A docker compose
+"A-line" stack runs Hive Metastore + Postgres + (optionally) DolphinScheduler
+for integration testing. Publish Orchestrator, DS Adapter, Instance Service,
+Frontend remain to be built; see `openspec/changes/data-dev-platform/tasks.md`
+for the live progress checklist.
 
 ## Quick start
 
@@ -30,7 +32,31 @@ shellcheck --severity=warning spark_submit.sh   # optional
 ```
 
 `pyspark` itself is **not** a dev dependency. The driver imports it only inside
-its `main()` SparkSession path, so all 100 tests run in any environment.
+its `main()` SparkSession path, so all 132 tests run in any environment.
+
+## Local development stack (optional)
+
+For working on the publish-time pipeline (Snapshot Service, Publish
+Orchestrator, DS Adapter) you can spin up a real Hive Metastore + Postgres +
+DolphinScheduler in docker:
+
+```bash
+make up         # HMS + Postgres (≈60 s first boot, ≈10 s afterwards)
+make up-ds      # DolphinScheduler standalone (opt-in)
+make ps         # see what's running
+make down       # stop (keeps volumes)
+make clean      # drop volumes too
+```
+
+Once `make up` is healthy, six `@pytest.mark.compose` tests light up
+(`make test-compose`). When the stack is down they SKIP, so default
+`uv run pytest` always works.
+
+The stack is intentionally minimal — no HDFS, no YARN, no Kerberos. See
+[`compose/README.md`](./compose/README.md) for the rationale and the
+override knobs (host ports, etc.). The full Kerberos-on-YARN B-line stack
+is documented in `openspec/changes/data-dev-platform/design.md` MVP scope
+and will land when group 9+17 need it.
 
 ## Repository layout
 
@@ -53,10 +79,15 @@ its `main()` SparkSession path, so all 100 tests run in any environment.
 │                                       + appId capture + platform callback.
 ├── t_eci_company_4_dwi.sql             Production SQL kept as a regression
 │                                       fixture for driver upgrades.
-├── tests/                              pytest suite (100 cases). Includes two
+├── tests/                              pytest suite (132 cases). Includes two
 │                                       end-to-end runs that stitch
 │                                       Resolver → snapshot file →
 │                                       spark_submit.sh → driver --dry-run.
+├── compose/                            Optional local docker stack
+│                                       (HMS + Postgres + DS). See
+│                                       `compose/README.md`.
+├── Makefile                            `make up | down | logs | ...` for the
+│                                       compose stack.
 ├── pyproject.toml                      uv-managed Python project.
 └── openspec/                           OpenSpec design assets (see below).
 ```
