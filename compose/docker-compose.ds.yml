@@ -1,0 +1,43 @@
+# DolphinScheduler standalone overlay.
+#
+# Bring up SEPARATELY from docker-compose.yml (the main HMS stack):
+#
+#   docker compose -f compose/docker-compose.yml up -d
+#   docker compose -f compose/docker-compose.ds.yml up -d
+#
+# DS standalone embeds H2 + zookeeper, so this single container is the full
+# Master + Worker + Alert + ApiServer.
+#
+# Web UI: http://localhost:12345/dolphinscheduler/ui
+# Default credentials: admin / dolphinscheduler123
+# Open API base: http://localhost:12345/dolphinscheduler
+
+services:
+  dolphinscheduler:
+    image: apache/dolphinscheduler-standalone-server:3.1.7
+    container_name: dataagent-ds
+    ports:
+      - "${DS_PORT:-12345}:12345"
+      - "${DS_PYTHON_GATEWAY_PORT:-25333}:25333"
+    environment:
+      MASTER_LISTEN_PORT: 5678
+    volumes:
+      - ds-data:/opt/dolphinscheduler/data
+      - ds-logs:/opt/dolphinscheduler/logs
+    networks: [dataagent-net]
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:12345/dolphinscheduler/actuator/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 20
+      start_period: 60s
+
+networks:
+  dataagent-net:
+    external: true
+
+volumes:
+  ds-data:
+    name: dataagent-ds-data
+  ds-logs:
+    name: dataagent-ds-logs

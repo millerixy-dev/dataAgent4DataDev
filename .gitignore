@@ -46,3 +46,8 @@ openspec-architecture-driven.zip
 .env
 .env.*
 !.env.example
+
+# --- Local docker-compose state -------------------------------------------
+compose/.env
+compose/warehouse/*
+!compose/warehouse/.gitkeep

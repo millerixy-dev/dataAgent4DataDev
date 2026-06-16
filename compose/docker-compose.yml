@@ -1,0 +1,118 @@
+# A-line local development environment.
+#
+# What's running:
+#   - postgres:14                          HMS metadata DB
+#   - apache/hive:3.1.3 (init mode)        one-shot: schematool -initSchema
+#   - apache/hive:3.1.3 (metastore mode)   long-running thrift server :9083
+#
+# What's NOT running here:
+#   - HDFS NameNode / DataNode             warehouse lives on a host volume
+#   - YARN ResourceManager / NodeManager   driver runs local[*] in tests
+#   - Kerberos KDC                         A-line is plain auth
+#
+# DS standalone is in docker-compose.ds.yml — start it separately when needed.
+#
+# Port map (host:container, override via .env):
+#   $POSTGRES_PORT      15433 -> 5432    (15433 to avoid clashing with system pg)
+#   $HMS_THRIFT_PORT    19083 -> 9083    (default 9083 commonly held by other CDP stacks)
+#   $HMS_WEBUI_PORT     10012 -> 10002
+#
+# Volumes:
+#   warehouse/  bind-mount host dir; HMS records URIs as file:///opt/hive/warehouse,
+#               so callers (driver running on the host) must use the SAME absolute
+#               path inside the container. The host runs spark in local[*] and
+#               points spark.sql.warehouse.dir at the same path on the host —
+#               works because we run pyspark on the host, not inside this compose.
+#
+# Tear down:
+#   make down              # stops services
+#   make clean             # also wipes warehouse/ + pg-data/
+
+services:
+  postgres:
+    image: postgres:14
+    container_name: dataagent-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-metastore}
+      POSTGRES_USER: ${POSTGRES_USER:-hive}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-hive}
+      # Hive 3.1.3 ships an old org.postgresql.Driver that does not
+      # understand scram-sha-256 (Postgres 14's default). Force md5 so
+      # schematool / the metastore can authenticate.
+      POSTGRES_HOST_AUTH_METHOD: md5
+      POSTGRES_INITDB_ARGS: "--auth-host=md5"
+    ports:
+      - "${POSTGRES_PORT:-15433}:5432"
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks: [dataagent-net]
+
+  hive-init:
+    # One-shot: initialise the metastore schema in postgres, then exit 0.
+    # On subsequent `up` it short-circuits because schematool detects the
+    # existing schema and returns non-zero — we treat that as success too.
+    image: apache/hive:3.1.3
+    container_name: dataagent-hive-init
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      SERVICE_NAME: schematool
+      DB_DRIVER: postgres
+      SCHEMA_COMMAND: initSchema
+      HIVE_CUSTOM_CONF_DIR: /opt/hive/custom-conf
+    volumes:
+      - ./hive-conf:/opt/hive/custom-conf:ro
+      - ./hive-init/run.sh:/opt/hive-init/run.sh:ro
+    entrypoint: ["bash", "/opt/hive-init/run.sh"]
+    networks: [dataagent-net]
+    restart: "no"
+
+  hive-metastore:
+    image: apache/hive:3.1.3
+    container_name: dataagent-hive-metastore
+    depends_on:
+      hive-init:
+        condition: service_completed_successfully
+    environment:
+      SERVICE_NAME: metastore
+      DB_DRIVER: postgres
+      # IS_RESUME=true tells the stock entrypoint to skip initialize_hive
+      # (we already ran schematool in the hive-init container, against the
+      # same postgres DB).
+      IS_RESUME: "true"
+      HIVE_CUSTOM_CONF_DIR: /opt/hive/custom-conf
+    ports:
+      - "${HMS_THRIFT_PORT:-19083}:9083"
+      - "${HMS_WEBUI_PORT:-10012}:10002"
+    volumes:
+      - ./hive-conf:/opt/hive/custom-conf:ro
+      - ./warehouse:/opt/hive/warehouse
+    healthcheck:
+      # The image has bash but no nc/curl. Bash's /dev/tcp pseudo-fs probes
+      # the listening socket without an external client. CMD form (rather
+      # than CMD-SHELL) so docker exec runs bash directly, not /bin/sh.
+      test:
+        - "CMD"
+        - "bash"
+        - "-c"
+        - "exec 3<>/dev/tcp/localhost/9083 && exec 3<&- && exec 3>&-"
+      interval: 10s
+      timeout: 5s
+      retries: 18
+      start_period: 60s
+    networks: [dataagent-net]
+
+networks:
+  dataagent-net:
+    name: dataagent-net
+    driver: bridge
+
+volumes:
+  pg-data:
+    name: dataagent-pg-data
